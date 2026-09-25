@@ -4,142 +4,320 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Silsilah Keluarga Besar Mbah Saki & Mbah Masiyah</title>
+    
+    <!-- Memuat Library D3.js v7 dari CDN Resmi -->
+    <script src="https://d3js.org"></script>
+    
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8fafc;
             margin: 0;
             padding: 20px;
-            color: #333;
+            color: #1e293b;
+            overflow-x: hidden;
         }
         .container {
-            max-width: 1200px;
+            max-width: 100%;
             margin: 0 auto;
+            padding: 0 10px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 25px;
         }
         h1 {
-            text-align: center;
-            color: #2c3e50;
+            color: #0f172a;
+            margin: 0 0 8px 0;
+            font-size: 2rem;
+            letter-spacing: -0.025em;
+        }
+        .sub-title {
+            color: #64748b;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        /* Panel Kontrol & Filter */
+        .control-panel {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .search-wrapper {
+            flex: 1;
+            min-width: 280px;
+            position: relative;
         }
         .search-box {
             width: 100%;
-            padding: 12px;
-            margin: 20px 0;
-            border: 1px solid #ccc;
+            padding: 10px 16px;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px;
             box-sizing: border-box;
+            transition: border-color 0.2s;
         }
-        .loading {
-            text-align: center;
-            font-size: 18px;
-            color: #7f8c8d;
+        .search-box:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+        }
+        select {
+            padding: 10px 14px;
             border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #cbd5e1;
+            background-color: white;
+            font-size: 14px;
+            color: #334155;
+            outline: none;
+            cursor: pointer;
         }
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+        select:focus {
+            border-color: #3b82f6;
         }
-        th {
-            background-color: #2980b9;
+        button {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .btn-primary {
+            background-color: #2563eb;
             color: white;
         }
-        tr:hover {
-            background-color: #f9f9f9;
+        .btn-primary:hover {
+            background-color: #1d4ed8;
         }
-        .badge-gen {
-            padding: 4px 8px;
-            border-radius: 4px;
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        
+        /* Area Canvas Pohon Silsilah */
+        #tree-container {
+            width: 100%;
+            height: 700px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            position: relative;
+            cursor: grab;
+        }
+        #tree-container:active {
+            cursor: grabbing;
+        }
+        
+        /* Indikator Memuat Data */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: #64748b;
+            text-align: center;
+            font-weight: 500;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Styling Komponen Gambar D3 (SVG) */
+        .node {
+            cursor: pointer;
+        }
+        .node rect {
+            fill: #ffffff;
+            stroke-width: 2px;
+            rx: 8px;
+            ry: 8px;
+            transition: fill 0.3s, stroke 0.3s;
+        }
+        
+        /* Kode Warna Identitas Silsilah Per Generasi */
+        .node-gen-0 rect { stroke: #475569; fill: #f8fafc; } /* Pancer Utama */
+        .node-gen-1 rect { stroke: #16a34a; fill: #f0fdf4; } /* Anak */
+        .node-gen-2 rect { stroke: #ea580c; fill: #fff7ed; } /* Cucu */
+        .node-gen-3 rect { stroke: #0284c7; fill: #f0f9ff; } /* Cicit */
+        .node-gen-4 rect { stroke: #7c3aed; fill: #f5f3ff; } /* Piut / Canggah */
+        
+        /* Warna Khusus Jika Cabang Memiliki Anak & Sedang Ditutup (Collapse) */
+        .node-collapsed rect {
+            fill: #cbd5e1 !important;
+            stroke: #64748b !important;
+        }
+
+        .node text {
             font-size: 12px;
-            font-weight: bold;
-            color: white;
+            fill: #334155;
+            pointer-events: none;
         }
-        .gen-0 { background-color: #34495e; }
-        .gen-1 { background-color: #27ae60; }
-        .gen-2 { background-color: #f39c12; }
-        .gen-3 { background-color: #d35400; }
-        .gen-4 { background-color: #c0392b; }
-        .alm { color: #c0392b; font-weight: bold; }
+        .node .node-name {
+            font-weight: 700;
+            font-size: 13px;
+            fill: #0f172a;
+        }
+        .node .node-spouse {
+            fill: #65a30d;
+            font-style: italic;
+            font-weight: 500;
+        }
+        .node .node-meta {
+            fill: #94a3b8;
+            font-size: 10px;
+        }
+        .node .alm-text {
+            fill: #dc2626;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        /* Garis Konektor Antar Cabang */
+        .link {
+            fill: none;
+            stroke: #cbd5e1;
+            stroke-width: 2px;
+            transition: stroke 0.3s;
+        }
+        
+        /* Efek Sorot Hasil Pencarian */
+        .highlight rect {
+            stroke: #2563eb !important;
+            stroke-width: 4px !important;
+            filter: drop-shadow(0 4px 6px rgba(37, 99, 235, 0.2));
+        }
+        
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-group {
+                justify-content: space-between;
+            }
+            .search-wrapper {
+                width: 100%;
+            }
+            #tree-container {
+                height: 550px;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🌳 Silsilah Keluarga Mbah Saki & Mbah Masiyah</h1>
-    <input type="text" id="search" class="search-box" placeholder="Cari nama anggota keluarga atau pasangan...">
+    <header>
+        <h1>🌳 Pohon Silsilah Keluarga Besar</h1>
+        <p class="sub-title">Mbah Saki & Mbah Masiyah — Klik pada kotak nama untuk membuka atau menutup cabang keturunan.</p>
+    </header>
     
-    <div id="loading" class="loading">Memuat data silsilah dari Google Sheets...</div>
+    <!-- Panel Kontrol Fitur -->
+    <div class="control-panel">
+        <div class="search-wrapper">
+            <input type="text" id="search" class="search-box" placeholder="🔍 Cari nama anggota keluarga atau pasangan...">
+        </div>
+        
+        <div class="filter-group">
+            <label for="genFilter">Generasi:</label>
+            <select id="genFilter">
+                <option value="all">Semua</option>
+                <option value="0">Gen 0 (Pancer)</option>
+                <option value="1">Gen 1 (Anak)</option>
+                <option value="2">Gen 2 (Cucu)</option>
+                <option value="3">Gen 3 (Cicit)</option>
+                <option value="4">Gen 4 (Piut)</option>
+            </select>
+            
+            <button id="btnExpandAll" class="btn-primary">Buka Semua</button>
+            <button id="btnCollapseAll" class="btn-danger">Tutup Semua</button>
+        </div>
+    </div>
     
-    <table id="familyTable" style="display: none;">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nama</th>
-                <th>Generasi</th>
-                <th>Status</th>
-                <th>Keterangan</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
+    <!-- Wadah Utama Pohon -->
+    <div id="tree-container">
+        <div id="loading-indicator" class="loading">
+            <div class="spinner"></div>
+            Memuat data silsilah real-time dari Google Sheets...
+        </div>
+    </div>
 </div>
 
 <script>
-    // ⚠️ GANTI DENGAN URL WEB APP YANG ANDA DAPATKAN DARI GOOGLE APPS SCRIPT KETIKA DEPLOY
+    // =========================================================================
+    // ⚠️ PENTING: GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI
+    // =========================================================================
     const webAppUrl = "https://script.google.com/macros/s/AKfycbzBrAqw-wLW6EO78cPJ_E2rbPTGJfQWolMoBytUuGkePgZ_m4Nx1WunWiTLWhYkDoGK/exec"; 
 
-    let familyData = [];
+    let rawData = [];
+    let root = null;
+    let svg, treeLayout;
+    let currentTransform = d3.zoomIdentity;
+    
+    // Konfigurasi Ukuran Kotak Anggota Keluarga
+    const boxWidth = 210;
+    const boxHeight = 70;
+    const levelSpacing = 280; // Jarak horizontal antar generasi (piksel)
 
-    async function fetchData() {
+    // Mengambil data dari Google Sheets API via Apps Script
+    async function loadFamilyData() {
         try {
             const response = await fetch(webAppUrl);
-            familyData = await response.json();
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('familyTable').style.display = 'table';
-            renderTable(familyData);
+            rawData = await response.json();
+            
+            // Sembunyikan indikator loading jika sukses
+            document.getElementById('loading-indicator').style.display = 'none';
+            
+            buildTreeStructure(rawData);
         } catch (error) {
-            document.getElementById('loading').innerText = "Gagal memuat data. Pastikan URL Web App benar dan akses disetel ke 'Anyone'.";
-            console.error(error);
+            document.getElementById('loading-indicator').innerHTML = `
+                <span style="color: #ef4444; font-weight: bold;">⚠️ Gagal Memuat Data</span><br>
+                <span style="font-size: 13px; color: #64748b;">Pastikan Deployment Web App di Apps Script disetel ke 'Anyone'.</span>
+            `;
+            console.error("Error fetching sheet data:", error);
         }
     }
 
-    function renderTable(data) {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = "";
-        
-        data.forEach(item => {
-            const isAlm = item.almarhum && item.almarhum.toString().toLowerCase() === 'ya';
-            const row = document.createElement('tr');
-            
-            row.innerHTML = `
-                <td>${item.id || ''}</td>
-                <td><strong>${item.nama || ''}</strong> ${isAlm ? '<span class="alm">(Alm)</span>' : ''}</td>
-                <td><span class="badge-gen gen-${item.generasi}">Gen ${item.generasi}</span></td>
-                <td>${item.status || ''}</td>
-                <td>${item.keterangan || ''}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    document.getElementById('search').addEventListener('input', function(e) {
-        const query = e.target.value.toLowerCase();
-        const filtered = familyData.filter(item => 
-            (item.nama && item.nama.toLowerCase().includes(query)) ||
-            (item.keterangan && item.keterangan.toLowerCase().includes(query))
-        );
-        renderTable(filtered);
-    });
-
-    fetchData();
-</script>
-
-</body>
-</html>
+    // Memproses data datar menjadi arsitektur pohon hirarki
+    function buildTreeStructure(data) {
