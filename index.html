@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silsilah Keluarga Besar Mbah Saki & Mbah Masiyah</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            margin: 20px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            color: #7f8c8d;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background-color: #2980b9;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        .badge-gen {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .gen-0 { background-color: #34495e; }
+        .gen-1 { background-color: #27ae60; }
+        .gen-2 { background-color: #f39c12; }
+        .gen-3 { background-color: #d35400; }
+        .gen-4 { background-color: #c0392b; }
+        .alm { color: #c0392b; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🌳 Silsilah Keluarga Mbah Saki & Mbah Masiyah</h1>
+    <input type="text" id="search" class="search-box" placeholder="Cari nama anggota keluarga atau pasangan...">
+    
+    <div id="loading" class="loading">Memuat data silsilah dari Google Sheets...</div>
+    
+    <table id="familyTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nama</th>
+                <th>Generasi</th>
+                <th>Status</th>
+                <th>Keterangan</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    // ⚠️ GANTI DENGAN URL WEB APP YANG ANDA DAPATKAN DARI GOOGLE APPS SCRIPT KETIKA DEPLOY
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbzBrAqw-wLW6EO78cPJ_E2rbPTGJfQWolMoBytUuGkePgZ_m4Nx1WunWiTLWhYkDoGK/exec"; 
+
+    let familyData = [];
+
+    async function fetchData() {
+        try {
+            const response = await fetch(webAppUrl);
+            familyData = await response.json();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('familyTable').style.display = 'table';
+            renderTable(familyData);
+        } catch (error) {
+            document.getElementById('loading').innerText = "Gagal memuat data. Pastikan URL Web App benar dan akses disetel ke 'Anyone'.";
+            console.error(error);
+        }
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = "";
+        
+        data.forEach(item => {
+            const isAlm = item.almarhum && item.almarhum.toString().toLowerCase() === 'ya';
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${item.id || ''}</td>
+                <td><strong>${item.nama || ''}</strong> ${isAlm ? '<span class="alm">(Alm)</span>' : ''}</td>
+                <td><span class="badge-gen gen-${item.generasi}">Gen ${item.generasi}</span></td>
+                <td>${item.status || ''}</td>
+                <td>${item.keterangan || ''}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    document.getElementById('search').addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase();
+        const filtered = familyData.filter(item => 
+            (item.nama && item.nama.toLowerCase().includes(query)) ||
+            (item.keterangan && item.keterangan.toLowerCase().includes(query))
+        );
+        renderTable(filtered);
+    });
+
+    fetchData();
+</script>
+
+</body>
+</html>
