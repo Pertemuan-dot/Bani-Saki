@@ -288,7 +288,7 @@
     // =========================================================================
     // ⚠️ PENTING: GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI
     // =========================================================================
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbzBrAqw-wLW6EO78cPJ_E2rbPTGJfQWolMoBytUuGkePgZ_m4Nx1WunWiTLWhYkDoGK/exec"; 
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbx585DQQmbUSnQ5MChSvL_LpdzkO5LwoapUhHYnaJ9y0ti_YNQKo3apOvGBpIo7li14/exec"; 
 
     let rawData = [];
     let root = null;
@@ -302,19 +302,39 @@
 
     // Mengambil data dari Google Sheets API via Apps Script
     async function loadFamilyData() {
-        try {
-            const response = await fetch(webAppUrl);
-            rawData = await response.json();
-            
-            // Sembunyikan indikator loading jika sukses
+        // 1. Coba tampilkan data yang ada di penyimpanan browser (Local Storage) dulu agar instan
+        const localData = localStorage.getItem('familyDataLocal');
+        if (localData) {
+            rawData = JSON.parse(localData);
             document.getElementById('loading-indicator').style.display = 'none';
-            
             buildTreeStructure(rawData);
+        }
+
+        try {
+            // 2. Tetap ambil data terbaru dari Google Sheets di latar belakang
+            const response = await fetch(webAppUrl);
+            const freshData = await response.json();
+            
+            // 3. Simpan data terbaru ke Local Storage untuk kunjungan berikutnya
+            localStorage.setItem('familyDataLocal', JSON.stringify(freshData));
+            
+            // Jika sebelumnya belum ada data lokal, langsung gambar pohonnya
+            if (!localData) {
+                rawData = freshData;
+                document.getElementById('loading-indicator').style.display = 'none';
+                buildTreeStructure(rawData);
+            } else {
+                // Jika ingin otomatis memperbarui tampilan jika ada perubahan, 
+                // bisa memanggil fungsi update di sini.
+            }
+            
         } catch (error) {
-            document.getElementById('loading-indicator').innerHTML = `
-                <span style="color: #ef4444; font-weight: bold;">⚠️ Gagal Memuat Data</span><br>
-                <span style="font-size: 13px; color: #64748b;">Pastikan Deployment Web App di Apps Script disetel ke 'Anyone'.</span>
-            `;
+            if (!localData) {
+                document.getElementById('loading-indicator').innerHTML = `
+                    <span style="color: #ef4444; font-weight: bold;">⚠️ Gagal Memuat Data</span><br>
+                    <span style="font-size: 13px; color: #64748b;">Pastikan URL Apps Script benar.</span>
+                `;
+            }
             console.error("Error fetching sheet data:", error);
         }
     }
